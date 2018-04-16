@@ -1,0 +1,45 @@
+﻿For each team member, assign a number that you think is representative of the contribution they made to your 
+team’s project.  Since these numbers are percentages, the sum should equal 100.  For example, if there are 
+4 members on your team and you think your fellow team members each did their fair share of the work; you 
+would assign each of them a score of 25.  Notice, you are to assign a number for yourself as well as your 
+team members.
+
+These numbers will be kept confidential; however, you may request to know the total score that has been 
+assigned to you.  The instructor reserves the right to overrule any scores that he deems to be unreasonable.
+
+If everyone on your team thought that you did your fair share and, consequently, gave you a score of 25 on 
+each of their evaluation sheets, your total score would be 100%.  Your project grade would then be 100% of 
+whatever grade was assigned to the project as a whole.  For example, if the project receives a grade of 85 
+and your participation percentage is 100%, you will receive an 85 as your NIM project score.
+
+Example:
+
+Team Members    Percentage       Responsibility
+
+Joe Student         25           Wrote the server negotiation 
+Bugs Bunny          20           Wrote the client negotiation ("What's up doc?")
+SpongeBob            2           Provided food from the Krusty Krab
+Spiderman           53           Wrote the game logic, chat, AI, GUI, and the "web"
+                ---------
+Total              100%
+
+
+Team Member                 Percentage        Responsibility
+
+________________________    __________        _________________________________
+
+
+________________________    __________	      _________________________________
+
+
+________________________    __________	      _________________________________
+
+
+________________________    __________	      _________________________________
+
+Total                          100%
+
+
+
+______________________________
+Your Name
