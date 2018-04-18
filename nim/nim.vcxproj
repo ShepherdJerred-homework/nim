@@ -18,6 +18,24 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\clientMain.cpp" />
+    <ClCompile Include="..\connectsock.cpp" />
+    <ClCompile Include="..\getBroadcastAdress.cpp" />
+    <ClCompile Include="..\getIPAdressInfo.cpp" />
+    <ClCompile Include="..\getServers.cpp" />
+    <ClCompile Include="..\Nim.cpp" />
+    <ClCompile Include="..\passivesock.cpp" />
+    <ClCompile Include="..\playNIM.cpp" />
+    <ClCompile Include="..\serverMain.cpp" />
+    <ClCompile Include="..\timestamp.cpp" />
+    <ClCompile Include="..\UDP_recv.cpp" />
+    <ClCompile Include="..\UDP_send.cpp" />
+    <ClCompile Include="..\wait.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Nim.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{0D097B19-D3FB-4B9C-ABF1-ECDC9A73CD1A}</ProjectGuid>
@@ -114,9 +132,6 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Source.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

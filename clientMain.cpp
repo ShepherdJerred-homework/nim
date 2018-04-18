@@ -86,7 +86,7 @@ int clientMain(int argc, char *argv[], std::string playerName)
 			someone else or exit.
 			*/
 
-			int len = UDP_recv(s, buffer, MAX_RECV_BUF, (char*)host.c_str(), (char*)port.c_str());
+			len = UDP_recv(s, buffer, MAX_RECV_BUF, (char*)host.c_str(), (char*)port.c_str());
 
 			if (strcmp(buffer,NIM_ACCEPT) == 0)
 			{

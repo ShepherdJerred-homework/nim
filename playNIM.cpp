@@ -10,4 +10,5 @@
 int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort, int localPlayer)
 {
 	std::cout << std::endl << "you made it this far" << std::endl << std::endl;
+	return -1;
 }
