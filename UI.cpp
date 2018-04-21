@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "ui.h"
 
 //Prompts what kind of game they want to play
@@ -25,14 +24,16 @@ std::string promptForInput(std::string prompt)
 }
 
 //Outputs the board
-void showBoard(std::vector<int> board, int numPiles) 
+void showBoard(std::vector<int> board) 
 {
 	cout << "board state" << endl;
 
-	for (int i = 0; i < numPiles; i++)
+	for (int i = 0; i < board.size(); i++)
 	{
+		std::cout << "Pile " << i + 1 << ": ";
 		for (int j = 0; j < board[i]; j++)
 		{
+			
 			cout << "*";
 		}
 		cout << endl;

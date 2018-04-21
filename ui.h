@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -17,7 +17,7 @@ char chooseGameMode();
 std::string promptForInput(std::string prompt);
 
 //Outputs the board
-void showBoard(std::vector<int> board, int numPiles);
+void showBoard(std::vector<int> board);
 
 //Outputs messages given a name
 void outputMessage(std::string name, std::string message);
