@@ -10,6 +10,29 @@
 
 std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort);
 
+
+struct MoveStruct {
+	int pileNumber;
+	int numberOfRocks ;
+};
+
+MoveStruct getMove(const std::vector<int> board)
+{
+	MoveStruct move;
+	do {
+		
+		std::cout << "Which pile would you like to take from? ";
+		std::cin >> move.pileNumber;
+	} while (move.pileNumber > 0 && move.pileNumber <= board.size());
+
+	do {
+		std::cout << "How many rocks would you like to take? ";
+		std::cin >> move.numberOfRocks;
+	} while (move.numberOfRocks > 0 && move.numberOfRocks <= board[move.pileNumber]);
+
+	return move;
+}
+
 std::vector<int> createBoard(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort)
 {
 	//have the server pick the dimensions of the board to send to client
@@ -83,9 +106,21 @@ std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remo
 	return board;
 }
 
+void updateBoard(std::vector<int> board, MoveStruct move)
+{
+	if (move.pileNumber > 0 && move.pileNumber <= board.size())
+	{
+		if (board[move.pileNumber] >= move.numberOfRocks)
+		{
+
+		}
+	}
+}
+
 
 int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort, int localPlayer)
 {
+	int winner = noWinner;
 	char myMove[MAX_SEND_BUF];
 	char opponentMove[MAX_RECV_BUF];
 	std::vector<int> board;
@@ -101,14 +136,22 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 	/*
 	* This causes issue, haven't debugged yet. Feel free to take a look.
 	*/
-	while (1) {
+	while (winner == noWinner) {
 		if (isMyMove) {
-			//getMove(myMove);
+
+			MoveStruct move = getMove(board);
+			
+			
 			UDP_send(s, myMove, MAX_SEND_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
 		}
 		else {
 			cout << "waiting for opponent's move...\n";
-			UDP_recv(s, opponentMove, MAX_RECV_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+			int status = wait(s, WAIT_TIME, 0);
+			if (status > 0)
+			{
+				UDP_recv(s, opponentMove, MAX_RECV_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+			}
+			
 		}
 
 		showBoard(board);

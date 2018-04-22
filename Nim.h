@@ -22,6 +22,7 @@ const int MAX_RECV_BUF = 2048;
 const int MAX_SERVERS = 100;
 const int client = 1;
 const int server = 2;
+const int noWinner = 0;
 const int ABORT = -1;
 
 
@@ -32,6 +33,8 @@ struct ServerStruct {
 	std::string host;
 	std::string port;
 };
+
+
 
 SOCKET connectsock(const char*, const char*, const char*);
 SOCKET passivesock(const char*, const char*);
