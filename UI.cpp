@@ -26,18 +26,23 @@ std::string promptForInput(std::string prompt)
 //Outputs the board
 void showBoard(std::vector<int> board) 
 {
-	cout << "board state" << endl;
+	cout << "\nNIM Board:" << endl;
+	cout << string(60, '-') << endl;
+	short pileCount = 0;
 
 	for (int i = 0; i < board.size(); i++)
 	{
 		std::cout << "Pile " << i + 1 << ": ";
 		for (int j = 0; j < board[i]; j++)
 		{
-			
-			cout << "*";
+			cout << "* ";
+			pileCount++;
 		}
+		cout << setw(46 - pileCount * 2) << "(" << setfill(' ') << setw(2) << pileCount << ") <-";
 		cout << endl;
+		pileCount = 0;
 	}
+	cout << string(60, '-') << endl;
 }
 
 //Outputs messages given a name

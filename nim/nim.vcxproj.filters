@@ -54,9 +54,15 @@
     <ClCompile Include="..\wait.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\UI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Nim.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

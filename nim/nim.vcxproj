@@ -31,10 +31,12 @@
     <ClCompile Include="..\timestamp.cpp" />
     <ClCompile Include="..\UDP_recv.cpp" />
     <ClCompile Include="..\UDP_send.cpp" />
+    <ClCompile Include="..\UI.cpp" />
     <ClCompile Include="..\wait.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Nim.h" />
+    <ClInclude Include="..\ui.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
