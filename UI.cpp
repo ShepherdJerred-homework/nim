@@ -42,7 +42,7 @@ void showBoard(std::vector<int> board)
 		cout << endl;
 		pileCount = 0;
 	}
-	cout << string(60, '-') << endl;
+	cout << string(60, '-') << endl << endl;
 }
 
 //Outputs messages given a name
