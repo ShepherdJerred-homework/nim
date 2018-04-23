@@ -13,22 +13,22 @@ std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remo
 
 struct MoveStruct {
 	int pileNumber;
-	int numberOfRocks ;
+	int numberOfRocks;
 };
 
 MoveStruct getMove(const std::vector<int> board)
 {
 	MoveStruct move;
 	do {
-		
+
 		std::cout << "Which pile would you like to take from? ";
 		std::cin >> move.pileNumber;
-	} while (move.pileNumber <= 0 && move.pileNumber > board.size());
+	} while (move.pileNumber <= 0 || move.pileNumber > board.size());
 
 	do {
 		std::cout << "How many rocks would you like to take? ";
 		std::cin >> move.numberOfRocks;
-	} while (move.numberOfRocks <= 0 && move.numberOfRocks > board[move.pileNumber]);
+	} while (move.numberOfRocks <= 0 || move.numberOfRocks > board[move.pileNumber]);
 
 	return move;
 }
@@ -73,7 +73,7 @@ std::vector<int> createBoard(SOCKET s, std::string serverName, std::string remot
 	//change to c_string for transmission
 	strcpy_s(dataStr, boardDimensions.c_str());
 
-	UDP_send(s, dataStr, MAX_SEND_BUF + 1, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+	UDP_send(s, dataStr, strlen(dataStr) + 1, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
 
 	return board;
 }
@@ -83,7 +83,7 @@ std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remo
 	//receive the board from the opponent/client
 	char boardRecvd[MAX_RECV_BUF];
 	std::vector<int> board;
-	UDP_recv(s, boardRecvd, MAX_RECV_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+	UDP_recv(s, boardRecvd, MAX_RECV_BUF - 1, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
 	std::string boardData = boardRecvd;
 	std::string extra = boardData.substr(0, 1);
 	int numPiles = atoi(extra.c_str());
@@ -112,7 +112,7 @@ void updateBoard(std::vector<int> &board, MoveStruct move)
 	{
 		if (board[move.pileNumber - 1] >= move.numberOfRocks)
 		{
-			board[move.pileNumber -1 ] -= move.numberOfRocks;
+			board[move.pileNumber - 1] -= move.numberOfRocks;
 		}
 	}
 }
@@ -142,7 +142,7 @@ int check4Win(std::vector<int> board, bool myTurn, int localPlayer)
 		{
 			winner = client;
 		}
-		
+
 	}
 	else
 	{
@@ -157,6 +157,7 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 {
 	int winner = noWinner;
 	char myMove[MAX_SEND_BUF];
+	char opponentIP[v4AddressSize];
 	char opponentMove[MAX_RECV_BUF];
 	std::vector<int> board;
 	bool isMyMove;
@@ -169,7 +170,7 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 	else {
 		opponent = client;
 		isMyMove = false;
-	} 
+	}
 
 	if (localPlayer == server)
 		board = createBoard(s, serverName, remoteIP, remotePort);
@@ -195,70 +196,75 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 				moveStr = moveStr + std::to_string(move.numberOfRocks);
 			}
 			strcpy_s(myMove, moveStr.c_str());
-			
-			UDP_send(s, myMove, MAX_SEND_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+
+			UDP_send(s, myMove, strlen(myMove) + 1, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
 			showBoard(board);
+			isMyMove = false;
 		}
 		else {
 			cout << "waiting for opponent's move...\n";
 			int status = wait(s, WAIT_TIME, 0);
 			if (status > 0)
 			{
-				UDP_recv(s, opponentMove, MAX_RECV_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
-				std::string boardData = opponentMove;
-				std::string extra = boardData.substr(0, 1);
-				MoveStruct recvdMove;
-				recvdMove.pileNumber = atoi(extra.c_str());
-				if (recvdMove.pileNumber > 0 && recvdMove.pileNumber <= board.size())
-				{
-					if (boardData[1] == '0')
+				strcpy_s(opponentIP, remoteIP.c_str());
+				UDP_recv(s, opponentMove, MAX_RECV_BUF - 1, opponentIP, (char*)remotePort.c_str());
+				if (strcmp(opponentIP, remoteIP.c_str()) == 0) {
+					//checkCommandType(opponentMove, )
+
+					// if we are playing against our opponent, process their move
+					std::string boardData = opponentMove;
+					std::string extra = boardData.substr(0, 1);
+					MoveStruct recvdMove;
+					recvdMove.pileNumber = atoi(extra.c_str());
+					if (recvdMove.pileNumber > 0 && recvdMove.pileNumber <= board.size())
 					{
-						extra = boardData.substr(2, 1);
-						recvdMove.numberOfRocks = atoi(extra.c_str());
-					}
-					else
-					{
-						extra = boardData.substr(1, 2);
-						recvdMove.numberOfRocks = atoi(extra.c_str());
-					}
-					if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber])
-					{
-						updateBoard(board, recvdMove);
+						if (boardData[1] == '0')
+						{
+							extra = boardData.substr(2, 1);
+							recvdMove.numberOfRocks = atoi(extra.c_str());
+						}
+						else
+						{
+							extra = boardData.substr(1, 2);
+							recvdMove.numberOfRocks = atoi(extra.c_str());
+						}
+						if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber])
+						{
+							updateBoard(board, recvdMove);
+						}
+						else
+						{
+							//add code to automatically win
+						}
 					}
 					else
 					{
 						//add code to automatically win
 					}
+					showBoard(board);
+					isMyMove = true;
 				}
-				else
-				{
-					//add code to automatically win
-				}
-				
-				showBoard(board);
 			}
 			else
 			{
 				winner = ABORT;
 			}
-			
 		}
 
-		
-		
+
+
 		if (winner == ABORT) {
 			std::cout << timestamp() << " - No response from opponent.  Aborting the game..." << std::endl;
 		}
 		else {
-			winner = check4Win(board, isMyMove, localPlayer);
+			winner = check4Win(board, !isMyMove, localPlayer);
 		}
 
 		if (winner == localPlayer)
 			std::cout << "You WIN!" << std::endl;
-		
+
 		else if (winner == opponent)
 			std::cout << "I'm sorry.  You lost" << std::endl;
-		isMyMove = !isMyMove;
 	}
 	return -1;
 }
