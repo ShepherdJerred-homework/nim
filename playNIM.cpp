@@ -23,12 +23,12 @@ MoveStruct getMove(const std::vector<int> board)
 		
 		std::cout << "Which pile would you like to take from? ";
 		std::cin >> move.pileNumber;
-	} while (move.pileNumber > 0 && move.pileNumber <= board.size());
+	} while (move.pileNumber <= 0 && move.pileNumber > board.size());
 
 	do {
 		std::cout << "How many rocks would you like to take? ";
 		std::cin >> move.numberOfRocks;
-	} while (move.numberOfRocks > 0 && move.numberOfRocks <= board[move.pileNumber]);
+	} while (move.numberOfRocks <= 0 && move.numberOfRocks > board[move.pileNumber]);
 
 	return move;
 }
@@ -106,15 +106,50 @@ std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remo
 	return board;
 }
 
-void updateBoard(std::vector<int> board, MoveStruct move)
+void updateBoard(std::vector<int> &board, MoveStruct move)
 {
 	if (move.pileNumber > 0 && move.pileNumber <= board.size())
 	{
-		if (board[move.pileNumber] >= move.numberOfRocks)
+		if (board[move.pileNumber - 1] >= move.numberOfRocks)
 		{
-
+			board[move.pileNumber -1 ] -= move.numberOfRocks;
 		}
 	}
+}
+
+int check4Win(std::vector<int> board, bool myTurn, int localPlayer)
+{
+	int winner;
+	bool win = true;
+	for (int i = 0; i < board.size(); i++)
+	{
+		if (board[i] > 0)
+		{
+			win = false;
+		}
+	}
+	if (win)
+	{
+		if (localPlayer == server && myTurn == true)
+		{
+			winner = server;
+		}
+		else if (localPlayer == client && myTurn == false)
+		{
+			winner = server;
+		}
+		else
+		{
+			winner = client;
+		}
+		
+	}
+	else
+	{
+		winner = noWinner;
+	}
+
+	return winner;
 }
 
 
@@ -124,8 +159,17 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 	char myMove[MAX_SEND_BUF];
 	char opponentMove[MAX_RECV_BUF];
 	std::vector<int> board;
-	bool isMyMove = localPlayer % 2; // if local player is playing as server (2) 
-									// this evaluates to false b/c client always has first move
+	bool isMyMove;
+	int opponent;
+
+	if (localPlayer == client) {
+		opponent = server;
+		isMyMove = true;
+	}
+	else {
+		opponent = client;
+		isMyMove = false;
+	} 
 
 	if (localPlayer == server)
 		board = createBoard(s, serverName, remoteIP, remotePort);
@@ -140,9 +184,20 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 		if (isMyMove) {
 
 			MoveStruct move = getMove(board);
-			
+			updateBoard(board, move);
+			std::string moveStr = std::to_string(move.pileNumber);
+			if (move.numberOfRocks <= 9)
+			{
+				moveStr = moveStr + "0" + std::to_string(move.numberOfRocks);
+			}
+			else
+			{
+				moveStr = moveStr + std::to_string(move.numberOfRocks);
+			}
+			strcpy_s(myMove, moveStr.c_str());
 			
 			UDP_send(s, myMove, MAX_SEND_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+			showBoard(board);
 		}
 		else {
 			cout << "waiting for opponent's move...\n";
@@ -150,11 +205,59 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 			if (status > 0)
 			{
 				UDP_recv(s, opponentMove, MAX_RECV_BUF, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+				std::string boardData = opponentMove;
+				std::string extra = boardData.substr(0, 1);
+				MoveStruct recvdMove;
+				recvdMove.pileNumber = atoi(extra.c_str());
+				if (recvdMove.pileNumber > 0 && recvdMove.pileNumber <= board.size())
+				{
+					if (boardData[1] == '0')
+					{
+						extra = boardData.substr(2, 1);
+						recvdMove.numberOfRocks = atoi(extra.c_str());
+					}
+					else
+					{
+						extra = boardData.substr(1, 2);
+						recvdMove.numberOfRocks = atoi(extra.c_str());
+					}
+					if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber])
+					{
+						updateBoard(board, recvdMove);
+					}
+					else
+					{
+						//add code to automatically win
+					}
+				}
+				else
+				{
+					//add code to automatically win
+				}
+				
+				showBoard(board);
+			}
+			else
+			{
+				winner = ABORT;
 			}
 			
 		}
 
-		showBoard(board);
+		
+		
+		if (winner == ABORT) {
+			std::cout << timestamp() << " - No response from opponent.  Aborting the game..." << std::endl;
+		}
+		else {
+			winner = check4Win(board, isMyMove, localPlayer);
+		}
+
+		if (winner == localPlayer)
+			std::cout << "You WIN!" << std::endl;
+		
+		else if (winner == opponent)
+			std::cout << "I'm sorry.  You lost" << std::endl;
 		isMyMove = !isMyMove;
 	}
 	return -1;
