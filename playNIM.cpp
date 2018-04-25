@@ -1,6 +1,6 @@
-//playNIM.cpp
+// playNIM.cpp
+// contains functions necissary to play NIM after a UDP negotiation has taken place
 
-//contains functions necissary to play NIM after a UDP negotiation has taken place
 #include "ui.h"
 #include "NIM.h"
 #include <iostream>
@@ -8,12 +8,35 @@
 #include <string>
 #include <vector>
 
-std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort);
-
+using std::string;
+using std::vector;
 
 struct MoveStruct {
     int pileNumber;
     int numberOfRocks;
+};
+
+namespace TURN_STATUS_NS {
+    enum TURN_STATUS {
+        PENDING,
+        TIMED_OUT,
+        SUCCESS,
+        FORFEIT
+    };
+}
+
+class ConnectionInfo {
+public:
+    string host;
+    string port;
+
+    const char *hostAsCString() {
+        return this->host.c_str();
+    }
+
+    const char *portAsCString() {
+        return this->port.c_str();
+    }
 };
 
 MoveStruct getMove(const std::vector<int> board) {
@@ -32,7 +55,7 @@ MoveStruct getMove(const std::vector<int> board) {
     return move;
 }
 
-std::vector<int> createBoard(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort) {
+std::vector<int> createBoard(SOCKET s, std::string remoteIP, std::string remotePort) {
     //have the server pick the dimensions of the board to send to client
     std::vector<int> board;
     char dataStr[MAX_SEND_BUF];
@@ -76,7 +99,7 @@ std::vector<int> createBoard(SOCKET s, std::string serverName, std::string remot
 }
 
 
-std::vector<int> receiveBoard(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort) {
+std::vector<int> receiveBoard(SOCKET s, std::string remoteIP, std::string remotePort) {
     //receive the board from the opponent/client
     char boardRecvd[MAX_RECV_BUF];
     std::vector<int> board;
@@ -107,7 +130,7 @@ void updateBoard(std::vector<int> &board, MoveStruct move) {
     }
 }
 
-int check4Win(std::vector<int> board, bool myTurn, int localPlayer) {
+int checkForWin(std::vector<int> &board, bool myTurn, int localPlayer) {
     int winner;
     bool win = true;
     for (int i = 0; i < board.size(); i++) {
@@ -116,114 +139,198 @@ int check4Win(std::vector<int> board, bool myTurn, int localPlayer) {
         }
     }
     if (win) {
-        if (localPlayer == server && myTurn == true) {
-            winner = server;
-        } else if (localPlayer == client && myTurn == false) {
-            winner = server;
+        if (localPlayer == SERVER && myTurn == true) {
+            winner = SERVER;
+        } else if (localPlayer == CLIENT && myTurn == false) {
+            winner = SERVER;
         } else {
-            winner = client;
+            winner = CLIENT;
         }
 
     } else {
-        winner = noWinner;
+        winner = NO_WINNER;
     }
 
     return winner;
 }
 
-
-int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string remotePort, int localPlayer) {
-    int winner = noWinner;
-    char myMove[MAX_SEND_BUF];
-    char opponentIP[v4AddressSize];
-    char opponentMove[MAX_RECV_BUF];
-    std::vector<int> board;
-    bool isMyMove;
-    int opponent;
-
-    if (localPlayer == client) {
-        opponent = server;
-        isMyMove = true;
+void displayWinner(int winner, int localPlayerType) {
+    if (winner == ABORT) {
+        std::cout << timestamp() << " - No response from opponent.  Aborting the game..." << std::endl;
+    } else if (winner == localPlayerType) {
+        std::cout << "You WIN!" << std::endl;
     } else {
-        opponent = client;
-        isMyMove = false;
+        std::cout << "I'm sorry.  You lost" << std::endl;
     }
+}
 
-    if (localPlayer == server)
-        board = createBoard(s, serverName, remoteIP, remotePort);
-    else
-        board = receiveBoard(s, serverName, remoteIP, remotePort);
+void handleMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    char myMove[MAX_SEND_BUF];
+
+    MoveStruct move = getMove(board);
+    updateBoard(board, move);
+    std::string moveStr = std::to_string(move.pileNumber);
+    if (move.numberOfRocks <= 9) {
+        moveStr = moveStr + "0" + std::to_string(move.numberOfRocks);
+    } else {
+        moveStr = moveStr + std::to_string(move.numberOfRocks);
+    }
+    strcpy_s(myMove, moveStr.c_str());
+
+    UDP_send(socket, myMove, strlen(myMove), (char *) remoteConnectionInfo.hostAsCString(),
+             (char *) remoteConnectionInfo.portAsCString());
     showBoard(board);
+}
 
-    /*
-    * This causes issue, haven't debugged yet. Feel free to take a look.
-    */
-    while (winner == noWinner) {
-        if (isMyMove) {
+void handleOpponentMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket, char move[]) {
+    cout << "waiting for opponent's move...\n";
 
-            MoveStruct move = getMove(board);
-            updateBoard(board, move);
-            std::string moveStr = std::to_string(move.pileNumber);
-            if (move.numberOfRocks <= 9) {
-                moveStr = moveStr + "0" + std::to_string(move.numberOfRocks);
-            } else {
-                moveStr = moveStr + std::to_string(move.numberOfRocks);
+    // TODO Need to take off the leading 'm' from the array
+    std::string boardData = move;
+    std::string extra = boardData.substr(0, 1);
+    MoveStruct recvdMove;
+    recvdMove.pileNumber = atoi(extra.c_str());
+    if (recvdMove.pileNumber > 0 && recvdMove.pileNumber <= board.size()) {
+        if (boardData[1] == '0') {
+            extra = boardData.substr(2, 1);
+            recvdMove.numberOfRocks = atoi(extra.c_str());
+        } else {
+            extra = boardData.substr(1, 2);
+            recvdMove.numberOfRocks = atoi(extra.c_str());
+        }
+        if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber - 1]) {
+            updateBoard(board, recvdMove);
+        } else {
+            // TODO add code to automatically win
+        }
+    } else {
+        // TODO add code to automatically win
+    }
+    showBoard(board);
+}
+
+void sendChat(string message, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    UDP_send(socket, const_cast<char *>(message.c_str()), strlen(message.c_str()),
+             (char *) remoteConnectionInfo.hostAsCString(),
+             (char *) remoteConnectionInfo.portAsCString());
+}
+
+void handleChatSend(ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    displayChatPrompt();
+    string chatInput = getChatInput();
+    chatInput = "C" + chatInput + "\0";
+    sendChat(chatInput, remoteConnectionInfo, socket);
+}
+
+void handleForfeitSend(ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+
+}
+
+void handleMyTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    ACTION_TYPE_NS::ACTION_TYPE actionType;
+
+    do {
+        actionType = getActionFromUser();
+
+        switch (actionType) {
+            case ACTION_TYPE_NS::MOVE:
+                handleMove(board, remoteConnectionInfo, socket);
+                break;
+            case ACTION_TYPE_NS::CHAT:
+                handleChatSend(remoteConnectionInfo, socket);
+                break;
+            case ACTION_TYPE_NS::FORFEIT:
+                handleForfeitSend(remoteConnectionInfo, socket);
+                break;
+            case ACTION_TYPE_NS::INVALID:
+                break;
+        }
+    } while (actionType != ACTION_TYPE_NS::MOVE);
+}
+
+void handleOpponentChat(char message[]) {
+    displayOpponentChat(message);
+}
+
+TURN_STATUS_NS::TURN_STATUS handleOpponentTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    char receiveBuffer[MAX_RECV_BUF];
+    char opponentIP[v4AddressSize];
+    strcpy_s(opponentIP, remoteConnectionInfo.hostAsCString());
+
+    TURN_STATUS_NS::TURN_STATUS turnStatus = TURN_STATUS_NS::PENDING;
+
+    do {
+        int status = wait(socket, WAIT_TIME, 0);
+        if (status > 0) {
+            UDP_recv(socket, receiveBuffer, MAX_RECV_BUF - 1, opponentIP,
+                     (char *) remoteConnectionInfo.portAsCString());
+            if (strcmp(opponentIP, remoteConnectionInfo.hostAsCString()) == 0) {
+                if (receiveBuffer[0] == 'C') {
+                    handleOpponentChat(receiveBuffer);
+                } else if (receiveBuffer[0] == 'm') {
+                    handleOpponentMove(board, remoteConnectionInfo, socket, receiveBuffer);
+                    turnStatus = TURN_STATUS_NS::SUCCESS;
+                    break;
+                } else if (receiveBuffer[0] == 'F') {
+                    turnStatus = TURN_STATUS_NS::FORFEIT;
+                    break;
+                }
             }
-            strcpy_s(myMove, moveStr.c_str());
+        } else {
+            turnStatus = TURN_STATUS_NS::TIMED_OUT;
+        }
+    } while (turnStatus == TURN_STATUS_NS::PENDING);
 
-            UDP_send(s, myMove, strlen(myMove), (char *) remoteIP.c_str(), (char *) remotePort.c_str());
-            showBoard(board);
+    return turnStatus;
+
+}
+
+void runGameLoop(std::vector<int> &board, int localPlayerType, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+    int winner = NO_WINNER;
+
+    bool isMyMove = localPlayerType == CLIENT;
+
+    do {
+        if (isMyMove) {
+            handleMyTurn(board, remoteConnectionInfo, socket);
             isMyMove = false;
         } else {
-            cout << "waiting for opponent's move...\n";
-            int status = wait(s, WAIT_TIME, 0);
-            if (status > 0) {
-                strcpy_s(opponentIP, remoteIP.c_str());
-                UDP_recv(s, opponentMove, MAX_RECV_BUF - 1, opponentIP, (char *) remotePort.c_str());
-                if (strcmp(opponentIP, remoteIP.c_str()) == 0) {
-                    //checkCommandType(opponentMove, )
-
-                    // if we are playing against our opponent, process their move
-                    std::string boardData = opponentMove;
-                    std::string extra = boardData.substr(0, 1);
-                    MoveStruct recvdMove;
-                    recvdMove.pileNumber = atoi(extra.c_str());
-                    if (recvdMove.pileNumber > 0 && recvdMove.pileNumber <= board.size()) {
-                        if (boardData[1] == '0') {
-                            extra = boardData.substr(2, 1);
-                            recvdMove.numberOfRocks = atoi(extra.c_str());
-                        } else {
-                            extra = boardData.substr(1, 2);
-                            recvdMove.numberOfRocks = atoi(extra.c_str());
-                        }
-                        if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber - 1]) {
-                            updateBoard(board, recvdMove);
-                        } else {
-                            //add code to automatically win
-                        }
-                    } else {
-                        //add code to automatically win
-                    }
-                    showBoard(board);
-                    isMyMove = true;
-                }
-            } else {
+            TURN_STATUS_NS::TURN_STATUS status = handleOpponentTurn(board, remoteConnectionInfo, socket);
+            isMyMove = true;
+            if (status == TURN_STATUS_NS::TIMED_OUT) {
                 winner = ABORT;
             }
+            if (status == TURN_STATUS_NS::FORFEIT) {
+                winner = localPlayerType;
+            }
         }
-
-
-        if (winner == ABORT) {
-            std::cout << timestamp() << " - No response from opponent.  Aborting the game..." << std::endl;
-        } else {
-            winner = check4Win(board, !isMyMove, localPlayer);
+        if (winner == NO_WINNER) {
+            winner = checkForWin(board, !isMyMove, localPlayerType);
         }
+    } while (winner == NO_WINNER);
+    displayWinner(winner, localPlayerType);
+}
 
-        if (winner == localPlayer)
-            std::cout << "You WIN!" << std::endl;
-
-        else if (winner == opponent)
-            std::cout << "I'm sorry.  You lost" << std::endl;
+void
+initializeBoard(std::vector<int> &board, SOCKET socket, ConnectionInfo remoteConnectionInfo, int localPlayerType) {
+    if (localPlayerType == SERVER) {
+        board = createBoard(socket, remoteConnectionInfo.host, remoteConnectionInfo.port);
+    } else {
+        board = receiveBoard(socket, remoteConnectionInfo.host, remoteConnectionInfo.port);
     }
+}
+
+int playNIM(SOCKET socket, string serverName, string remoteIP, string remotePort, int localPlayerType) {
+
+    ConnectionInfo remoteConnectionInfo;
+    remoteConnectionInfo.host = remoteIP;
+    remoteConnectionInfo.port = remotePort;
+
+    std::vector<int> board;
+
+    initializeBoard(board, socket, remoteConnectionInfo, localPlayerType);
+    showBoard(board);
+    runGameLoop(board, localPlayerType, remoteConnectionInfo, socket);
+
     return -1;
 }

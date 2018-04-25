@@ -18,11 +18,12 @@ const int portNumberSize = 10;
 const int MAX_INTERFACES = 20;
 const int WAIT_TIME = 60;
 const int MAX_SEND_BUF = 2048;
+const int MAX_CHAT_SIZE = MAX_SEND_BUF - 2;
 const int MAX_RECV_BUF = 2048;
 const int MAX_SERVERS = 100;
-const int client = 1;
-const int server = 2;
-const int noWinner = 0;
+const int CLIENT = 1;
+const int SERVER = 2;
+const int NO_WINNER = 0;
 const int ABORT = -1;
 
 

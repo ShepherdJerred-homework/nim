@@ -14,17 +14,24 @@ using std::string;
 using std::setw;
 using std::setfill;
 
-//Prompts what kind of game they want to play
-//RETURNS char that tells whether the user wants to be
-//	a server, a client, or to quit
-char chooseGameMode();
 
-//Prompts for input and returns said input
-std::string promptForInput(std::string prompt);
+namespace ACTION_TYPE_NS {
+    enum ACTION_TYPE {
+        MOVE, CHAT, FORFEIT, INVALID
+    };
+}
 
-//Outputs the board
+void displayOpponentChat(char *message);
+
+void displayChatPrompt();
+
+string getChatInput();
+
+ACTION_TYPE_NS::ACTION_TYPE getActionFromUser();
+
+// Outputs the board
 void showBoard(std::vector<int> board);
 
-//Outputs messages given a name
+// Outputs messages given a name
 void outputMessage(std::string name, std::string message);
 

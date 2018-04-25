@@ -60,7 +60,7 @@ int serverMain(int argc, char *argv[], std::string playerName) {
                     if (strcmp(buffer, NIM_CONFIRM) == 0) {
                         // Play the game.  You are the 'O' player
                         int winner = playNIM(s, (char *) playerName.c_str(), (char *) host.c_str(),
-                                             (char *) port.c_str(), server);
+                                             (char *) port.c_str(), SERVER);
                         finished = true;
                     }
                 } else {

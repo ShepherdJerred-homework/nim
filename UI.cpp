@@ -1,28 +1,60 @@
 #include "ui.h"
+#include "nim.h"
 
-//Prompts what kind of game they want to play
-//RETURNS char that tells whether the user wants to be
-//	a server, a client, or to quit
-char chooseGameMode() {
-    char mode;
-    cout << "choose game mode. c:client s:server q:quit" << endl << "Input: ";
-    cin >> mode;
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+using std::string;
 
-    return mode;
+void displayChatPrompt() {
+    cout << "Type a message to send\n";
 }
 
-//Prompts for input and returns said input
-std::string promptForInput(std::string prompt) {
-    cout << prompt << endl << "Input: ";
-    std::string input;
-    getline(cin, input);
+void displayOpponentChat(char *message) {
+    cout << "Opponent: " << message;
+}
 
-    return input;
+string getChatInput() {
+    string chatInput;
+    getline(cin, chatInput);
+    chatInput.resize(MAX_CHAT_SIZE);
+    return chatInput;
+}
+
+ACTION_TYPE_NS::ACTION_TYPE getActionType() {
+    string input;
+    cin >> input;
+    if (input == "M" || input == "m") {
+        return ACTION_TYPE_NS::MOVE;
+    } else if (input == "C" || input == "c") {
+        return ACTION_TYPE_NS::CHAT;
+    } else if (input == "F" || input == "f") {
+        return ACTION_TYPE_NS::FORFEIT;
+    } else {
+        return ACTION_TYPE_NS::INVALID;
+    }
+}
+
+void displayActionPrompt() {
+    cout << "What do you want to do?\n";
+    cout << "(M)ove, (C)hat, (F)orfeit\n";
+}
+
+ACTION_TYPE_NS::ACTION_TYPE getActionFromUser() {
+    ACTION_TYPE_NS::ACTION_TYPE actionType;
+
+    do {
+        displayActionPrompt();
+        actionType = getActionType();
+    } while (actionType == ACTION_TYPE_NS::ACTION_TYPE::INVALID);
+
+    return actionType;
+}
+
+void clearScreen() {
+    system("cls");
 }
 
 //Outputs the board
 void showBoard(std::vector<int> board) {
+    clearScreen();
     cout << "\nNIM Board:" << endl;
     cout << string(60, '-') << endl;
     short pileCount = 0;
