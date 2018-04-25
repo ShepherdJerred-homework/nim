@@ -28,7 +28,7 @@ MoveStruct getMove(const std::vector<int> board)
 	do {
 		std::cout << "How many rocks would you like to take? ";
 		std::cin >> move.numberOfRocks;
-	} while (move.numberOfRocks <= 0 || move.numberOfRocks > board[move.pileNumber]);
+	} while (move.numberOfRocks <= 0 || move.numberOfRocks > board[move.pileNumber - 1]);
 
 	return move;
 }
@@ -197,7 +197,7 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 			}
 			strcpy_s(myMove, moveStr.c_str());
 
-			UDP_send(s, myMove, strlen(myMove) + 1, (char*)remoteIP.c_str(), (char*)remotePort.c_str());
+			UDP_send(s, myMove, strlen(myMove) , (char*)remoteIP.c_str(), (char*)remotePort.c_str());
 			showBoard(board);
 			isMyMove = false;
 		}
@@ -228,7 +228,7 @@ int playNIM(SOCKET s, std::string serverName, std::string remoteIP, std::string 
 							extra = boardData.substr(1, 2);
 							recvdMove.numberOfRocks = atoi(extra.c_str());
 						}
-						if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber])
+						if (recvdMove.numberOfRocks > 0 && recvdMove.numberOfRocks <= board[recvdMove.pileNumber - 1])
 						{
 							updateBoard(board, recvdMove);
 						}
