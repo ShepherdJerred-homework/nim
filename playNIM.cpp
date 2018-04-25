@@ -175,6 +175,8 @@ void handleMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET 
     } else {
         moveStr = moveStr + std::to_string(move.numberOfRocks);
     }
+
+    moveStr = "m" + moveStr;
     strcpy_s(myMove, moveStr.c_str());
 
     UDP_send(socket, myMove, strlen(myMove), (char *) remoteConnectionInfo.hostAsCString(),
@@ -187,6 +189,7 @@ void handleOpponentMove(vector<int> &board, ConnectionInfo remoteConnectionInfo,
 
     // TODO Need to take off the leading 'm' from the array
     std::string boardData = move;
+    boardData = boardData.substr(1, boardData.length() - 1);
     std::string extra = boardData.substr(0, 1);
     MoveStruct recvdMove;
     recvdMove.pileNumber = atoi(extra.c_str());
@@ -223,10 +226,13 @@ void handleChatSend(ConnectionInfo remoteConnectionInfo, SOCKET socket) {
 }
 
 void handleForfeitSend(ConnectionInfo remoteConnectionInfo, SOCKET socket) {
-
+    string f = "F";
+    UDP_send(socket, const_cast<char *>(f.c_str()), strlen(f.c_str()),
+             (char *) remoteConnectionInfo.hostAsCString(),
+             (char *) remoteConnectionInfo.portAsCString());
 }
 
-void handleMyTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
+ACTION_TYPE_NS::ACTION_TYPE handleMyTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
     ACTION_TYPE_NS::ACTION_TYPE actionType;
 
     do {
@@ -245,11 +251,15 @@ void handleMyTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKE
             case ACTION_TYPE_NS::INVALID:
                 break;
         }
-    } while (actionType != ACTION_TYPE_NS::MOVE);
+    } while (actionType != ACTION_TYPE_NS::MOVE && actionType != ACTION_TYPE_NS::FORFEIT);
+
+    return actionType;
 }
 
 void handleOpponentChat(char message[]) {
-    displayOpponentChat(message);
+    char *pm = message;
+    pm++;
+    displayOpponentChat(pm);
 }
 
 TURN_STATUS_NS::TURN_STATUS handleOpponentTurn(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket) {
@@ -292,8 +302,11 @@ void runGameLoop(std::vector<int> &board, int localPlayerType, ConnectionInfo re
 
     do {
         if (isMyMove) {
-            handleMyTurn(board, remoteConnectionInfo, socket);
+            ACTION_TYPE_NS::ACTION_TYPE actionType = handleMyTurn(board, remoteConnectionInfo, socket);
             isMyMove = false;
+            if (actionType == ACTION_TYPE_NS::ACTION_TYPE::FORFEIT) {
+                winner = localPlayerType == 1 ? 2 : 1;
+            }
         } else {
             TURN_STATUS_NS::TURN_STATUS status = handleOpponentTurn(board, remoteConnectionInfo, socket);
             isMyMove = true;

@@ -7,15 +7,16 @@ void displayChatPrompt() {
     cout << "Type a message to send\n";
 }
 
-void displayOpponentChat(char *message) {
+void displayOpponentChat(char message[]) {
     cout << "Opponent: " << message;
 }
 
 string getChatInput() {
-    string chatInput;
-    getline(cin, chatInput);
-    chatInput.resize(MAX_CHAT_SIZE);
-    return chatInput;
+    char c[MAX_CHAT_SIZE + 1];
+    cin.ignore();
+    cin.getline(c, MAX_CHAT_SIZE);
+    string s = c;
+    return s;
 }
 
 ACTION_TYPE_NS::ACTION_TYPE getActionType() {
