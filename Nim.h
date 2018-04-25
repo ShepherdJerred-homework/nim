@@ -4,10 +4,10 @@
 #include <WinSock2.h>
 #include <string>
 
-static char NIM_UDPPORT[] = "29333";			// Port number used by TicTacToe servers
+static char NIM_UDPPORT[] = "29333";            // Port number used by TicTacToe servers
 
 #define NIM_QUERY  "Who?"
-#define NIM_NAME	 "Name="
+#define NIM_NAME     "Name="
 #define NIM_CHALLENGE "Player="
 #define NIM_ACCEPT "YES"
 #define NIM_DECLINE "NO"
@@ -29,22 +29,32 @@ const int ABORT = -1;
 static char board[10];
 
 struct ServerStruct {
-	std::string name;
-	std::string host;
-	std::string port;
+    std::string name;
+    std::string host;
+    std::string port;
 };
 
 
+SOCKET connectsock(const char *, const char *, const char *);
 
-SOCKET connectsock(const char*, const char*, const char*);
-SOCKET passivesock(const char*, const char*);
-int UDP_recv(SOCKET, char*, int, char*, char*);
-int UDP_send(SOCKET, char*, int, const char*, const char*);
+SOCKET passivesock(const char *, const char *);
+
+int UDP_recv(SOCKET, char *, int, char *, char *);
+
+int UDP_send(SOCKET, char *, int, const char *, const char *);
+
 int wait(SOCKET, int, int);
-char* timestamp();
-int getServers(SOCKET, char*, char*, ServerStruct[]);
+
+char *timestamp();
+
+int getServers(SOCKET, char *, char *, ServerStruct[]);
+
 int playNIM(SOCKET, std::string, std::string, std::string, int);
+
 int serverMain(int, char *argv[], std::string);
+
 int clientMain(int, char *argv[], std::string);
-int getIPAddressInfo(char*, char*);
-char* getBroadcastAddress();
+
+int getIPAddressInfo(char *, char *);
+
+char *getBroadcastAddress();

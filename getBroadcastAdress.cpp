@@ -10,8 +10,7 @@ adapter and returns the associated broadcast address
 
 #pragma comment (lib, "iphlpapi.lib")
 
-char* getBroadcastAddress()
-{
+char* getBroadcastAddress() {
 	// NOTE: This code only returns the broadcast address for the first adapter
 	//       found that has a non-zero IP address associated
 
