@@ -176,7 +176,6 @@ void handleMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET 
         moveStr = moveStr + std::to_string(move.numberOfRocks);
     }
 
-    moveStr = "m" + moveStr;
     strcpy_s(myMove, moveStr.c_str());
 
     UDP_send(socket, myMove, strlen(myMove), (char *) remoteConnectionInfo.hostAsCString(),
@@ -187,9 +186,7 @@ void handleMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET 
 void handleOpponentMove(vector<int> &board, ConnectionInfo remoteConnectionInfo, SOCKET socket, char move[]) {
     cout << "waiting for opponent's move...\n";
 
-    // TODO Need to take off the leading 'm' from the array
     std::string boardData = move;
-    boardData = boardData.substr(1, boardData.length() - 1);
     std::string extra = boardData.substr(0, 1);
     MoveStruct recvdMove;
     recvdMove.pileNumber = atoi(extra.c_str());
@@ -277,12 +274,12 @@ TURN_STATUS_NS::TURN_STATUS handleOpponentTurn(vector<int> &board, ConnectionInf
             if (strcmp(opponentIP, remoteConnectionInfo.hostAsCString()) == 0) {
                 if (receiveBuffer[0] == 'C') {
                     handleOpponentChat(receiveBuffer);
-                } else if (receiveBuffer[0] == 'm') {
-                    handleOpponentMove(board, remoteConnectionInfo, socket, receiveBuffer);
-                    turnStatus = TURN_STATUS_NS::SUCCESS;
-                    break;
                 } else if (receiveBuffer[0] == 'F') {
                     turnStatus = TURN_STATUS_NS::FORFEIT;
+                    break;
+                } else {
+                    handleOpponentMove(board, remoteConnectionInfo, socket, receiveBuffer);
+                    turnStatus = TURN_STATUS_NS::SUCCESS;
                     break;
                 }
             }
